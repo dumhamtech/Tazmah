@@ -1,0 +1,179 @@
+```javascript
+const {
+  makeWASocket,
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  delay
+} = require('@whiskeysockets/baileys');
+
+const fs = require('fs');
+const path = require('path');
+const moment = require('moment');  // For handling dates and times
+
+async function startBot() {
+  // Use multi-file authentication state (can be useful for larger bots)
+  const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+
+  // Create the socket connection
+  const sock = makeWASocket({
+    auth: state,
+    printQRInTerminal: true,  // Show QR code in terminal for pairing
+    browser: ['TazmahBot', 'Chrome', '1.0.0'],
+    getMessage: async (key) => {
+      return { conversation: 'Hello, I am your bot!' }; // Default message
+    },
+  });
+
+  // Save credentials on updates
+  sock.ev.on('creds.update', saveCreds);
+
+  // Pairing with the phone (if not already paired)
+  if (!sock.authState.creds.registered) {
+    console.log('Requesting pairing code...');
+    await sock.requestPairingCode('234XXXXXXXXXX'); // Replace with your WhatsApp number (international format)
+}
+
+  // Listen for incoming message
+  sock.ev.on('messages.upsert', async ({ messages }) => {
+    const msg = messages[0];
+    if (!msg.message || msg.key.fromMe) return;  // Ignore empty or self-sent messages
+
+    const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
+
+    // Respond to commands
+    if (text === '.menu') {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `
+HEY 👋 CHAMP, THANKS FOR USING *TAZMAH 2.0*!
+
+🛑 *GENERAL COMMANDS*:
+
+⚫️ *.USER* : 👤 SHOW YOUR NAME
+
+⚫️ *.VERSION* : 🔢 SHOW BOT VERSION (CURRENTLY 2.0)
+
+⚫️ *.TIME* : ⏰ SHOW THE CURRENT TIME IN NIGERIA
+
+⚫️ *.COMMANDS* : 📜 SHOW THE TOTAL NUMBER OF COMMANDS
+
+⚫️ *.TODAY* : 📅 SHOW THE DAY OF THE WEEK
+
+⚫️ *.DATE* : 📆 SHOW TODAY'S DATE
+
+⚫️ *.HELP* : ❓ GET HELP WITH COMMANDS
+
+⚫️ *.OWNER* : 👑 SHOW BOT OWNER INFO
+
+🛑 *DOWNLOADER MENU*:
+
+⚫️ *.PLAY* : 🎶 REQUEST A SONG BY TITLE AND ARTIST (EXAMPLE: .PLAY LOVING YOU BY ZINOLEESKY)
+
+⚫️ *.VIDEO* : 📹 REQUEST A VIDEO BY TITLE (EXAMPLE: .VIDEO TEEN WOLF)
+
+⚫️ *.LYRICS* : 🎤 REQUEST LYRICS OF A SONG (EXAMPLE: .LYRICS LOVING YOU BY ZINOLEESKY)
+
+🛑 *GROUP MENU*:
+
+⚫️ *.CREATE_GROUP* : 🏗️ CREATE A NEW GROUP
+
+⚫️ *.ADD_MEMBER* : ➕ ADD A NEW MEMBER TO THE GROUP
+
+⚫️ *.REMOVE_MEMBER* : ❌ REMOVE A MEMBER FROM THE GROUP
+
+🛑 *OWNER MENU*:
+⚫️ *.AUTOSTATUSVIEW (ON/OFF)* : 👀 TO ENABLE AUTOMATIC STATUS VIEWING (EXAMPLE: .AUTOSTATUSVIEW (ON))
+
+⚫️ *.ALWAYSONLINE (ON/OFF)* : 🔴 TO KEEP BOT ALWAYS ONLINE (EXAMPLE: .ALWAYSONLINE (ON))
+
+*CREATED BY DUMHAM TECH* 💻🚀
+      `
+      });
+    } else if (text === '.help') {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `
+Here are the commands you can use:
+
+🛑 *GENERAL COMMANDS*:
+⚫️ *.USER* : 👤 Show your name
+⚫️ *.VERSION* : 🔢 Show bot version (Currently 2.0)
+⚫️ *.TIME* : ⏰ Show the current time in Nigeria
+⚫️ *.COMMANDS* : 📜 Show the total number of commands
+⚫️ *.TODAY* : 📅 Show the day of the week
+⚫️ *.DATE* : 📆 Show today's date
+⚫️ *.OWNER* : 👑 Show bot owner info
+⚫️ *.HELP* : ❓ Get help with commands
+
+🛑 *DOWNLOADER MENU*:
+⚫️ *.PLAY* : 🎶 Request a song by title and artist
+⚫️ *.VIDEO* : 📹 Request a video by title
+⚫️ *.LYRICS* : 🎤 Request lyrics of a song
+
+🛑 *GROUP MENU*:
+⚫️ *.CREATE_GROUP* : 🏗️ Create a new group
+⚫️ *.ADD_MEMBER* : ➕ Add a new member to the group
+⚫️ *.REMOVE_MEMBER* : ❌ Remove a member from the group
+
+🛑 *OWNER MENU*:
+⚫️ *.AUTOSTATUSVIEW (ON/OFF)* : 👀 Enable automatic status viewing
+⚫️ *.ALWAYSONLINE (ON/OFF)* : 🔴 Keep bot always online
+
+If you need help, reach out to the creator at: (+2349067841235)
+      `
+      });
+} else if (text.startsWith('.play')) {
+      const songDetails = text.slice(6);  // Extract song name and artist
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `Searching for the song: songDetails 🎶...`
+      );
+      // Add your logic here for searching and sending the song
+     else if (text.startsWith('.video')) 
+      const videoDetails = text.slice(7);  // Extract video name
+      await sock.sendMessage(msg.key.remoteJid, 
+        text: `Searching for the video:{videoDetails} 📹...`
+      });
+      // Add your logic here for searching and sending the video
+    } else if (text.startsWith('.lyrics')) {
+      const songDetails = text.slice(8);  // Extract song name and artist
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `Searching for lyrics of: songDetails 🎤...`
+      );
+      // Add your logic here for searching and sending lyrics
+     else if (text === '.owner') 
+      await sock.sendMessage(msg.key.remoteJid, 
+        text: 'Bot Owner: Dumham Tech 💻🚀'
+      );
+     else if (text === '.time') 
+      const time = moment().format('YYYY-MM-DD HH:mm:ss');
+      await sock.sendMessage(msg.key.remoteJid, 
+        text: `The current time in Nigeria is:{time}`
+      });
+    } else if (text === '.today') {const today = moment().format('dddd');
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `Today is: today`
+      );
+     else if (text === '.date') 
+      const date = moment().format('YYYY-MM-DD');
+      await sock.sendMessage(msg.key.remoteJid, 
+        text: `Today's date is:{date}`
+      });
+    }
+  });
+
+  // Optional: Listen for connection status changes
+  sock.ev.on('connection.update', (update) => {
+    const { connection, lastDisconnect } = update;
+    if (connection === 'close') {
+      const reason = lastDisconnect?.error?.output?.statusCode;
+      if (reason === 401) {
+        console.log('Unauthorized. Please re-scan the QR code!');
+      } else {
+        console.log('Connection closed. Reason:', reason);
+      }
+    } else if (connection === 'open') {
+      console.log('Bot is connected!');
+    }
+  });
+}
+
+startBot();
+```
